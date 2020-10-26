@@ -9,6 +9,7 @@
 #define MAX 128
 
 void string_lower(char *userIn);
+void concatenate_command(char *dest, char *userIn, char *intermediate);
 int built_in_check(char *userIn);
 
 int main() {
@@ -37,6 +38,16 @@ int main() {
                     //Print ID of child process and command:
                     printf("Child process %d will execute command: %s\n", getpid(), userIn);
                     //Use execve to change child to commanded process
+                    char dest[50];
+                    char intermediate[100][20];
+                    concatenate_command(dest, userIn, intermediate);
+                    int i = 0;
+                    while(intermediate[i][0] != '\0'){
+                        i++;
+                    }
+                    char *args[i];
+                    int j = 0;
+                    int check = execve(intermediate[0], intermediate, NULL);
                     //If below here, child process has failed, so tell user:
                     printf("Command not found!\n");
                     exit(1);
@@ -67,6 +78,33 @@ void string_lower(char *userIn){
     }
 }
 
+void concatenate_command(char *dest, char *userIn, char *intermediate){
+    memset(dest, '\0', strlen(dest));
+    int i;
+    for (i = 0; i < 100; i++){
+        memset(intermediate[i], '\0', 20);
+    }
+    char splits[strlen(userIn)];
+    strcpy(splits, userIn);
+    // Splits string
+    char *delim = ' ';
+    char *ptr = strtok(splits, delim);
+    while(ptr != NULL){
+        ptr = strtok(NULL, delim);
+    }
+    int j = 0;
+    for (i = 0; j < strlen(splits); i++){
+        int inter_index = 0;
+        for(j; splits[j] != '\0';){
+            intermediate[i][inter_index] = splits[j];
+            inter_index++;
+            j++;
+        }
+        j++;
+    }
+    strcpy(dest, "/bin/");
+    strcat(dest, intermediate[0]);
+}
 
 int built_in_check(char *userIn){
     if (!strcmp(userIn, "greet\n")) {
