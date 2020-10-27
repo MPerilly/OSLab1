@@ -40,18 +40,19 @@ int main() {
         }
         strcpy(temp, "/bin/");
         switch(commandCheck) {
+            //External command entered:
             case 0:
-                //External command entered:
+                // If the external command is valid, concatenate:
                 if (external_command_check(userIn)) {
                     strcat(temp, userIn);
                 }
+                // Unknown command, exit:
                 else {
-                    // Unknown command, exit:
                     printf("Unknown Command entered: %s, exiting.\n", userIn);
                     exit(1);
                 }
-                char *args[] = {temp, 0};
-                char *envp[] = {0};
+                char *args[] = {temp, NULL};
+                char *envp[] = {NULL};
                 pid = fork();
                 if (pid == 0) //i.e. child process
                 {
@@ -85,6 +86,7 @@ int main() {
                 exit(0);
         }
         free(userIn);
+        free(temp);
     }
 }
 
