@@ -32,13 +32,7 @@ int main() {
         //Conditional checks if command is built in:
         int commandCheck = built_in_check(userIn);
         int pid;
-        char *temp = NULL;
-        temp = malloc(5 + strlen(userIn) + 1);
-        if (temp == NULL){
-            printf("Malloc failure line 36\n");
-            exit(1);
-        }
-        strcpy(temp, "/bin/");
+
         switch(commandCheck) {
             //External command entered:
             case 0:
