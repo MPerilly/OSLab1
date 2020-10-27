@@ -5,12 +5,15 @@
 #include <sys/wait.h>
 #include <ctype.h>
 #include <string.h>
+#include <errno.h>
 
 #define MAX 128
 
+extern int errno;
+
 void string_lower(char *userIn);
-void concatenate_command(char *dest, char *userIn, char *intermediate);
 int built_in_check(char *userIn);
+int external_command_check(char *userIn);
 
 int main() {
     while(1){
@@ -29,25 +32,39 @@ int main() {
         //Conditional checks if command is built in:
         int commandCheck = built_in_check(userIn);
         int pid;
+        char *temp = NULL;
+        temp = malloc(5 + strlen(userIn) + 1);
+        if (temp == NULL){
+            printf("Malloc failure line 36\n");
+            exit(1);
+        }
+        strcpy(temp, "/bin/");
         switch(commandCheck) {
             case 0:
                 //External command entered:
+                if (external_command_check(userIn)) {
+                    strcat(temp, userIn);
+                }
+                else {
+                    // Unknown command, exit:
+                    printf("Unknown Command entered: %s, exiting.\n", userIn);
+                    exit(1);
+                }
+                char *args[] = {temp, 0};
+                char *envp[] = {0};
                 pid = fork();
-                if (!pid) //i.e. child process
+                if (pid == 0) //i.e. child process
                 {
                     //Print ID of child process and command:
                     printf("Child process %d will execute command: %s\n", getpid(), userIn);
                     //Use execve to change child to commanded process
-                    char dest[50];
-                    char intermediate[100][20];
-                    concatenate_command(dest, userIn, intermediate);
-                    int i = 0;
-                    while(intermediate[i][0] != '\0'){
-                        i++;
+                    printf("Executing: %s\n", args[0]);
+                    fflush(stdout);
+                    if (execve(args[0], args, envp) < 0){
+                        printf("Execve failure\n");
+                        fprintf(stderr, "Errno: %d\n", errno);
+                        perror("Perror");
                     }
-                    char *args[i];
-                    int j = 0;
-                    int check = execve(intermediate[0], intermediate, NULL);
                     //If below here, child process has failed, so tell user:
                     printf("Command not found!\n");
                     exit(1);
@@ -78,33 +95,6 @@ void string_lower(char *userIn){
     }
 }
 
-void concatenate_command(char *dest, char *userIn, char *intermediate){
-    memset(dest, '\0', strlen(dest));
-    int i;
-    for (i = 0; i < 100; i++){
-        memset(intermediate[i], '\0', 20);
-    }
-    char splits[strlen(userIn)];
-    strcpy(splits, userIn);
-    // Splits string
-    char *delim = ' ';
-    char *ptr = strtok(splits, delim);
-    while(ptr != NULL){
-        ptr = strtok(NULL, delim);
-    }
-    int j = 0;
-    for (i = 0; j < strlen(splits); i++){
-        int inter_index = 0;
-        for(j; splits[j] != '\0';){
-            intermediate[i][inter_index] = splits[j];
-            inter_index++;
-            j++;
-        }
-        j++;
-    }
-    strcpy(dest, "/bin/");
-    strcat(dest, intermediate[0]);
-}
 
 int built_in_check(char *userIn){
     if (!strcmp(userIn, "greet\n")) {
@@ -118,3 +108,23 @@ int built_in_check(char *userIn){
     }
     return 0;
 }
+
+int external_command_check(char *userIn){
+    if (!strcmp(userIn, "ls\n")) {
+        return 1;
+    }
+    else if (!strcmp(userIn, "pwd\n")) {
+        return 1;
+    }
+    else if (!strcmp(userIn, "ps\n")) {
+        return 1;
+    }
+    else if (!strcmp(userIn, "date\n")) {
+        return 1;
+    }
+    else if (!strcmp(userIn, "lscpu\n")) {
+        return 1;
+    }
+    return 0;
+}
+
